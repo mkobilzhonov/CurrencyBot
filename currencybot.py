@@ -1,9 +1,10 @@
 import telebot
 import requests
 import re
+import os
 from telebot.types import ReplyKeyboardMarkup, KeyboardButton
 
-TOKEN = "7668034106:AAFag-7G8LsXbbiqQqa7B0YZCDoLuDg_7uk"
+TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 CURRENCY_API_URL = "https://v6.exchangerate-api.com/v6/5d1b71b70708406fecea761b/latest/USD"
