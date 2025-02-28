@@ -52,4 +52,11 @@ def convert_currency(message):
 
 
 print("✅ Bot is running...")
-bot.polling()
+import time
+
+while True:
+    try:
+        bot.polling(none_stop=True, interval=0)
+    except Exception as e:
+        print(f"Error: {e}")
+        time.sleep(5)  
