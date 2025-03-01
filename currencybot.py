@@ -2,13 +2,14 @@ import telebot
 import requests
 import re
 import os
-from telebot.types import ReplyKeyboardMarkup, KeyboardButton
+import threading
+import time
+from flask import Flask
 
 TOKEN = os.getenv("TOKEN")
 bot = telebot.TeleBot(TOKEN)
 
 CURRENCY_API_URL = "https://v6.exchangerate-api.com/v6/5d1b71b70708406fecea761b/latest/USD"
-
 
 def get_exchange_rate(currency):
     try:
@@ -23,7 +24,6 @@ def get_exchange_rate(currency):
     except Exception:
         return None
 
-
 @bot.message_handler(commands=['start', 'help'])
 def send_welcome(message):
     text = ("👋 Hello! Send a message like:\n"
@@ -31,17 +31,13 @@ def send_welcome(message):
             "💶 `50 EUR` - Convert 50 euros to UZS")
     bot.send_message(message.chat.id, text, parse_mode="Markdown")
 
-
 @bot.message_handler(func=lambda message: True)
 def convert_currency(message):
     match = re.match(r'(\d+)\s*(USD|EUR)', message.text.upper())
-
     if match:
         amount = int(match.group(1))
         currency = match.group(2)
-
         rate = get_exchange_rate(currency)
-
         if rate:
             converted_amount = round(amount * rate, 2)
             bot.send_message(message.chat.id, f"✅ {amount} {currency} = {converted_amount} UZS 🇺🇿")
@@ -50,13 +46,23 @@ def convert_currency(message):
     else:
         bot.send_message(message.chat.id, "⚠ Please enter a valid format (e.g., `100 USD` or `50 EUR`).")
 
+# Flask web server to bind a port for Render
+app = Flask(__name__)
 
-print("✅ Bot is running...")
-import time
+@app.route('/')
+def home():
+    return "Currency Bot is Running!"
 
-while True:
-    try:
-        bot.polling(none_stop=True, interval=0)
-    except Exception as e:
-        print(f"Error: {e}")
-        time.sleep(5)  
+def run_flask():
+    port = int(os.environ.get("PORT", 5000))  # Render assigns a PORT
+    app.run(host="0.0.0.0", port=port)
+
+if __name__ == "__main__":
+    threading.Thread(target=run_flask).start()  # Start Flask server in a separate thread
+    print("✅ Bot is running...")
+    while True:
+        try:
+            bot.polling(none_stop=True, interval=0)
+        except Exception as e:
+            print(f"Error: {e}")
+            time.sleep(5)
